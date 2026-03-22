@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web3 DApp Interaction Portal</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 40px; background-color: #f4f7f6; }
+        .box { max-width: 450px; margin: auto; border: 1px solid #ddd; padding: 25px; border-radius: 8px; background-color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { color: #333; }
+        input { width: 90%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+        button { width: 95%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; transition: 0.3s; }
+        button:hover { background-color: #218838; }
+        .result-text { margin-top: 20px; font-weight: bold; color: #0056b3; font-size: 18px; }
+        hr { margin: 30px 0; border: 0; border-top: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Smart Contract Interface</h2>
+        
+        <input type="text" id="depositor" placeholder="Enter Depositor Name">
+        <input type="number" id="amount" placeholder="Enter Amount (in Wei)">
+        <button onclick="deposit_money()">Execute Deposit</button>
+        
+        <hr>
+        
+        <button style="background-color: #007bff;" onclick="view_transaction()">View Last Transaction</button>
+        <p class="result-text" id="view_depositor">Payer: --</p>
+        <p class="result-text" id="view_amount">Amount: --</p>
+    </div>
+
+    <script>
+        // Global variables
+        let web3;
+        let contract;
+
+        // 1. Contract Configuration (Replace with your actual data from Remix)
+        const contractAddress = "0x01aE820af59c37Be2B32321169f196486F241F5a"; 
+        const contractABI = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "string",
+                        "name": "_name",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "deposit_money",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "deposit_view",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "depositAmount",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "depositorName",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        // 2. Initialization Function
+        async function init() {
+            if (window.ethereum) {
+                // Connect to the provider injected by MetaMask
+                web3 = new Web3(window.ethereum);
+                try {
+                    // Create the contract instance for interaction
+                    contract = new web3.eth.Contract(contractABI, contractAddress);
+                    console.log("Web3 and Contract initialized.");
+                } catch (error) {
+                    console.error("Initialization failed:", error);
+                }
+            } else {
+                alert("MetaMask is required to use this application.");
+            }
+        }
+
+        // 3. Interaction Logic: Send Transaction (Writing Data)
+        async function deposit_money() {
+            try {
+                // Request user accounts
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                const currentAccount = accounts[0];
+
+                const nameValue = document.getElementById("depositor").value;
+                const amountValue = document.getElementById("amount").value;
+
+                console.log("Sending transaction for:", nameValue);
+
+                // Use .send() for functions that modify the blockchain state
+                // This will trigger the MetaMask payment popup
+                await contract.methods.deposit_money(nameValue, amountValue)
+                    .send({ from: currentAccount });
+                
+                alert("Transaction successfully confirmed on Sepolia!");
+            } catch (error) {
+                console.error("Transaction Error:", error);
+            }
+        }
+
+        // 4. Interaction Logic: Call Function (Reading Data)
+        async function view_transaction() {
+            try {
+                // Use .call() for 'view' or 'pure' functions
+                // This is free and does not require a wallet signature
+                const result = await contract.methods.deposit_view().call();
+                
+                // Update HTML elements with retrieved blockchain data
+                document.getElementById("view_depositor").innerText = "Payer : " + result[0];
+                document.getElementById("view_amount").innerText = "Amount : " + result[1];
+            } catch (error) {
+                console.error("Failed to retrieve data:", error);
+            }
+        }
+
+        // Initialize on page load
+        window.onload = init;
+    </script>
+</body>
+</html>
